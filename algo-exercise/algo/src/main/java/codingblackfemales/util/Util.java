@@ -3,6 +3,8 @@ package codingblackfemales.util;
 import codingblackfemales.sotw.SimpleAlgoState;
 import codingblackfemales.sotw.marketdata.AskLevel;
 import codingblackfemales.sotw.marketdata.BidLevel;
+import codingblackfemales.sotw.ChildOrder;
+import messages.order.Side;
 
 public class Util {
 
@@ -20,7 +22,7 @@ public class Util {
 
         int maxLevels = Math.max(state.getAskLevels(), state.getBidLevels());
 
-        builder.append(padLeft("|----BID-----", 12) + "|" + padLeft("|----ASK----", 12) + "|" + "\n");
+        builder.append(padLeft("|----BID-----", 12) + "|" + padLeft("|----ASK----", 12) + "|" + "\n"); // the logic
 
         for(int i=0; i<maxLevels; i++){
 
@@ -45,4 +47,29 @@ public class Util {
 
         return builder.toString();
     }
+
+    // New method to display individual orders because I prefer that view
+    public static String individualOrdersToString(final SimpleAlgoState state) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Individual Orders:\n");
+        builder.append("BID Orders:\n");
+        for (ChildOrder order : state.getChildOrders()) {
+            if (order.getSide() == Side.BUY) {
+                builder.append(String.format("  %d @ %d (ID: %s)\n",
+                        order.getQuantity(), order.getPrice(), order.getOrderId()));
+            }
+        }
+        builder.append("ASK Orders:\n");
+        for (ChildOrder order : state.getChildOrders()) {
+            if (order.getSide() == Side.SELL) {
+                builder.append(String.format("  %d @ %d (ID: %s)\n",
+                        order.getQuantity(), order.getPrice(), order.getOrderId()));
+            }
+        }
+        return builder.toString();
+    }
+
+
+
+
 }

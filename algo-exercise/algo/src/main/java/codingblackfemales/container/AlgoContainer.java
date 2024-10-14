@@ -18,7 +18,7 @@ public class AlgoContainer implements Consumer {
 
     private AlgoLogic logic;
 
-    private final SimpleAlgoState state;
+    private final SimpleAlgoState state; // This is a that is passed in from the container. The state object gives you access to two sets of information: 1) A current view on the market data 2) The current view of the child orders you've created, and whether they are filled or cancelled etc.
 
     public AlgoContainer(final MarketDataService marketDataService,
                          final OrderService orderService,
@@ -54,7 +54,7 @@ public class AlgoContainer implements Consumer {
     }
 
     private void runAlgoLogic(){
-        final var action = logic.evaluate(state);
+        final var action = logic.evaluate(state); // what does this line mean?
 
         runTrigger.hasRun();
 

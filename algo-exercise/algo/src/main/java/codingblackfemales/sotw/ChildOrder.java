@@ -52,7 +52,7 @@ public class ChildOrder {
         this.state = state;
     }
 
-    public void addFill(long filledQuantity, long filledPrice) {
+    public void addFill(long filledQuantity, long filledPrice) { // this method allows adding new fills to the order
         this.fills.add(new ChildFill(filledQuantity, filledPrice));
     }
 }

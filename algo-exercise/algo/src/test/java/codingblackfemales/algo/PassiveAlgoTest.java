@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 public class PassiveAlgoTest extends SequencerTestCase {
 
-    private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
+    private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder(); // creating an object called headerEncoder
     private final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
     private AlgoContainer container;
@@ -45,7 +45,7 @@ public class PassiveAlgoTest extends SequencerTestCase {
         return sequencer;
     }
 
-    private UnsafeBuffer createSampleMarketDataTick(){
+    private UnsafeBuffer createSampleMarketDataTick() {
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
 
@@ -82,3 +82,4 @@ public class PassiveAlgoTest extends SequencerTestCase {
         assertEquals(container.getState().getChildOrders().size(), 3);
     }
 }
+

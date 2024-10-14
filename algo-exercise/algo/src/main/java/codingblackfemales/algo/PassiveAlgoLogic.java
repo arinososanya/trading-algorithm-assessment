@@ -22,19 +22,20 @@ public class PassiveAlgoLogic implements AlgoLogic{
 
         final String book = Util.orderBookToString(state);
 
-        logger.info("[PASSIVEALGO] Algo Sees Book as:\n" + book);
+        logger.info("[PASSIVEALGO] Algo Sees Book as:\n" + book); // logging the current state of the order book
 
-        final BidLevel nearTouch = state.getBidAt(0);
+        final BidLevel nearTouch = state.getBidAt(0); // What offers are available at the bids: BidLevel; passive (more tentative) - near touch - second best price in queue?
 
-        long quantity = 75;
+        long quantity = 75; // hard coded quantity that we want to buy
         long price = nearTouch.price;
 
         //until we have three child orders....
         if(state.getChildOrders().size() < 3){
             //then keep creating a new one
-            logger.info("[PASSIVEALGO] Have:" + state.getChildOrders().size() + " children, want 3, joining passive side of book with: " + quantity + " @ " + price);
-            return new CreateChildOrder(Side.BUY, quantity, price);
-        }else{
+            logger.info("[PASSIVEALGO] Have:" + state.getChildOrders().size() + " children, want 3," +
+                    " joining passive side of book with: " + quantity + " @ " + price); // want 3 --> max is 3
+            return new CreateChildOrder(Side.BUY, quantity, price); // what's being executed
+        }else{ // if orders are more than 3
             logger.info("[PASSIVEALGO] Have:" + state.getChildOrders().size() + " children, want 3, done.");
             return NoAction;
         }

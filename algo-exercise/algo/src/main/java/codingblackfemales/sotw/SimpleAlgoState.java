@@ -3,13 +3,14 @@ package codingblackfemales.sotw;
 import codingblackfemales.sotw.marketdata.AskLevel;
 import codingblackfemales.sotw.marketdata.BidLevel;
 
+import java.util.Collections;
 import java.util.List;
 
-public interface SimpleAlgoState {
+public interface SimpleAlgoState { // explore this - contains methods for order book. We access this using the state object in the evaluate method
 
     public String getSymbol();
 
-    public int getBidLevels();
+    public int getBidLevels(); // helpful to understand how much liquidity is available at different price points
     public int getAskLevels();
 
     public BidLevel getBidAt(int index);
@@ -20,4 +21,8 @@ public interface SimpleAlgoState {
     public List<ChildOrder> getActiveChildOrders();
 
     public long getInstrumentId();
+
+    default List<Trade> getRecentTrades(){ // List is an interface, while ArrayList and LinkedList are specific implementations. Using List allows for more flexibility
+        return Collections.emptyList(); // this is the 'do nothing' behaviour. When using this method, it will be overriden.
+    }
 }
