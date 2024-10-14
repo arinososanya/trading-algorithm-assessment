@@ -105,3 +105,112 @@ const data = useMarketDepthData(schemas.prices);
 ```
 
 You will begin by uncommenting these. These will provide you with the data that will be rendered in the new MarketDepthFeature component. This data will refresh very frequently.
+
+## Steps to start the exercise
+
+1. MarketDepthFeature.tsx , uncomment the block of static data on lines 6 - 17
+2. still in MarketDepthFeature.tsx, delete <PlaceHolder /> on line 24
+3. create a new File MarketDepthPanel.tsx
+4. In this new file export a new component, called MarketDepthPanel, the overall structure will look something like this
+
+```typescript
+interface MarketDepthPanelProps {
+  data: MarketDepthRow[];
+}
+
+export const MarketDepthPanel = (props: MarketDepthPanelProps) => {
+  console.log({ props });
+  return <table></table>;
+};
+```
+
+5. Back in MarketDepthFeature.tsx, import the new component and use it
+
+```typescript
+import {MarketDepthPanel} from './MarketDepthPanel';
+
+return <MarketDepthPanel data={testData}>
+
+```
+
+6. Fill out the content of the table in MarketDepthPanel, building the appropriate rows,columns
+7. Add a CSS file MarketDepthPanel.css, import it in MarketDepthPanel.tsx
+
+```typescript
+import "./MarketDepthPanel.css";
+```
+
+8. give the table a className that tou can reference in the css file
+
+```typescript
+<table className="MarketDepthPanel"></table>
+```
+
+9. then, in the css file ...
+
+```css
+.MarketDepthPanel {
+  /*... your css here */
+}
+```
+
+10. When you have the structure of the table completed, you can add a component for the Price cell, create a new file PriceCell.tsx
+11. The structure will be something like this
+
+```
+
+export interface PriceCellProps {
+    price: number;
+}
+
+export const PriceCell = (props: PriceCellProps) => {
+    const {price} = props;
+    return (
+        <td>{price}</td>
+    )
+}
+
+```
+
+12. then you can use this component in your table
+
+```
+import {PriceCell} from './PriceCell';
+
+return (
+    <table>
+        <tr>
+            <td></td>
+            <PriceCell price={price}/>
+             <td></td>
+             ... rest of td ...
+       </tr>
+       ... rest of tr ...
+    </table>
+)
+```
+
+### Example of useRef hook
+
+This is the example I showed in StackBlitz, this was the ShowDirection component. The usage of useRef
+here should serve as an example of how you could implement the PriceCell component
+
+```typescript
+import { useRef } from "react";
+
+interface ShowDirectionProps {
+  value: number;
+}
+
+export const ShowDirection = (props: ShowDirectionProps) => {
+  const lastValueRef = useRef(props.value);
+
+  const diff = props.value - lastValueRef.current;
+
+  lastValueRef.current = props.value;
+
+  console.log(`diff = ${diff}`);
+
+  return <div>{`Show Direction diff = ${diff}`}</div>;
+};
+```
