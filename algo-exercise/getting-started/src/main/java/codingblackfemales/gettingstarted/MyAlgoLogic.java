@@ -23,34 +23,26 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
     private static final Logger logger = LoggerFactory.getLogger(MyAlgoLogic.class);
     private static final int MAX_ORDERS = 3;
     private static final int MAX_TOTAL_ORDERS = 10;
-    private static final long MAX_PRICE_DISTANCE_PERCENT = 1000; // I'm going to assume that 1000 ticks is one day
+    private static final double MAX_PRICE_DISTANCE_PERCENT = 0.05; // 5% distance threshold (for mid-price)
     private static final long MIN_SPREAD = 2; // I will only consider creating orders if the spread is at least 2
-
 
     @Override
     public Action evaluate(SimpleAlgoState state) { // State is an instance of SimpleAlgoState i.e it's an object of type SimpleAlgoState, that's passed to the evaluate method. The evaluate method returns an Action, which can be a CancelChildOrder, CreateChildOrder, or NoAction.
         var orderBookAsString = Util.orderBookToString(state); // checks the current state of the order book and logs it
         logger.info("[MYALGO] The state of the order book is:\n" + orderBookAsString);
 
+        /********
+         *
+         * Add your logic here....
+         *
+         */
+
         var totalOrderCount = state.getChildOrders().size(); // get the total number of child orders, regardless of their current status (rejected, cancelled, filled, active(live) orders etc.)
 
-        //make sure we have an exit condition... this is a safety check for if there are more than 15 child orders, then the algo does nothing
+        // 1. make sure we have an exit condition... this is a safety check for if there are more than 15 child orders, then the algo does nothing
         if (totalOrderCount > MAX_TOTAL_ORDERS) {
             return NoAction.NoAction;
         }
-
-        // 1. Check if we need to cancel old orders
-        List<ChildOrder> allOrders = state.getChildOrders();
-        if (allOrders.size() > MAX_TOTAL_ORDERS) {
-            ChildOrder oldestOrder = allOrders.get(0); //assuming orders are stored in chronological order
-            logger.info("[MYALGO] Cancelling oldest order to maintain order limit");
-            return new CancelChildOrder(oldestOrder);
-        }
-
-        // 1. Get the number of bid and ask levels
-        int bidLevels = state.getBidLevels();
-        int askLevels = state.getAskLevels();
-        logger.info("[MYALGO] Market Depth - Bid Levels: {}, Ask Levels: {}", bidLevels, askLevels);
 
         // 2. Get the market data (best bid and ask)
         final AskLevel askFarTouch = state.getAskAt(0);
@@ -62,6 +54,27 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
             return NoAction.NoAction;
         }
 
+        // 1. Check if we need to cancel old orders by comparing the distance of the order to the mid-price and seeing if this distance is within the threshold
+
+        // Calculate the mid-price
+        double midPrice = (askFarTouch.price + bidNearTouch.price) / 2.0;
+
+        // Check all active orders (iterate) for distance from the mid-price
+        List<ChildOrder> activeOrders = state.getActiveChildOrders();
+        for (ChildOrder order : activeOrders) {
+            double priceDistance = Math.abs(order.getPrice() - midPrice) / midPrice;
+
+            if (priceDistance > MAX_PRICE_DISTANCE_PERCENT) {
+                logger.info("[MYALGO] Cancelling order {} due to excessive price distance: {}%", order.getOrderId(), String.format("%.2f", priceDistance * 100));
+                return new CancelChildOrder(order);
+            }
+        }
+
+        // For display’s sake, get the number of bid and ask levels
+        int bidLevels = state.getBidLevels();
+        int askLevels = state.getAskLevels();
+        logger.info("[MYALGO] Market Depth - Bid Levels: {}, Ask Levels: {}", bidLevels, askLevels);
+
 //     If all is good, create and then calculate the spread
         final long spread = askFarTouch.price - bidNearTouch.price;
         if (spread < 0) {
@@ -71,7 +84,7 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
         if (spread < MIN_SPREAD) {
             logger.info("[MYALGO] Spread too small for order creation: {}", spread);
             return NoAction.NoAction;
-        }
+        }else logger.info("[MYALGO] Spread is: {}", spread);
 
         // So we can visually see what the best bid and ask are
         logger.info("[MYALGO] Best Bid: {} @ {}, Best Ask: {} @ {}",
@@ -79,25 +92,23 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
                 askFarTouch.quantity, askFarTouch.price);
 
         // Create order if conditions are met
-        var activeOrderCount = state.getActiveChildOrders().size();
+        var activeOrderCount = activeOrders.size();
         if (activeOrderCount < MAX_ORDERS) {
             // Place the buy order at the ask price to cross the spread
             long price = askFarTouch.price;
             long quantity = Math.min(100, askFarTouch.quantity); // I'm still limiting quantity for risk management
             logger.info("[MYALGO] Creating new aggressive buy order: {} @ {}", quantity, price);
-            return new CreateChildOrder(Side.BUY, quantity, price);
-
+            return new CreateChildOrder(Side.BUY, quantity, price );
         }
 
-    return NoAction.NoAction;
+        // Match if ...
+
+        return NoAction.NoAction;
+
     }
 }
 
-/********
- *
- * Add your logic here....
- *
- */
+
 
 /*
 Overview: Adding and Cancelling

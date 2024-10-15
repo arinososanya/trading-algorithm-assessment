@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement the MyAlgoBackTest, which sets up the pipes needed for my test environment
 
     @Override
-    public AlgoLogic createAlgoLogic() {
+    public AlgoLogic createAlgoLogic() { // instantiating the MyAlgoLogic class
         return new MyAlgoLogic();
     } // This createAlgoLogic() method is where you specify which algorithm logic should be used in your tests.
 
@@ -30,7 +30,7 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement th
         send(createTick());
 
         //ADD asserts when you have implemented your algo logic
-        //assertEquals(container.getState().getChildOrders().size(), 3);
+        assertEquals(container.getState().getChildOrders().size(), 3);
 
         //when: market data moves towards us
         send(createTick2());
@@ -42,9 +42,17 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement th
         long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).get();
 
         //and: check that our algo state was updated to reflect our fills when the market data
-        assertEquals(225, filledQuantity);
+        assertEquals(101, filledQuantity);
     }
+    // Anything to do with buying and selling
 
+    // Can I buy?
+
+    // Can I sell?
+
+    // If I buy and sell, can I come out with a profit?
+
+    // Trying to fulfil orders
 
     // I want to adjust the printing of the Order Book so that it prints individual orders with their IDs.
 }
