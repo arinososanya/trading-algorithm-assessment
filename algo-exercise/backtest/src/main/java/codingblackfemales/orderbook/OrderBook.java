@@ -101,7 +101,7 @@ public class OrderBook extends MarketDataEventListener {
             final long price = decoder.price();
             final long quantity = decoder.size();
             var marketOrder = new MarketDataOrderFlyweight(Side.SELL, price, quantity);
-            logger.debug("[ORDERBOOK] ASK: Adding order" + marketOrder);
+            logger.debug("[ORDERBOOK] BUY: Adding order" + marketOrder); // changed from 'ASK' to 'BUY' which worked for BackTest
             if(canMatch(Side.BUY, price)){
                 matchMarketDataOrder(marketOrder);
             }else{
@@ -115,7 +115,7 @@ public class OrderBook extends MarketDataEventListener {
             final long price = decoder.price();
             final long quantity = decoder.size();
             var marketOrder = new MarketDataOrderFlyweight(Side.SELL, price, quantity);
-            logger.debug("[ORDERBOOK] ASK: Adding order" + marketOrder);
+            logger.debug("[ORDERBOOK] BUY: Adding order" + marketOrder); // fixed the issue with log text
             if(canMatch(Side.BUY, price)){
                 matchMarketDataOrder(marketOrder);
             }else{
