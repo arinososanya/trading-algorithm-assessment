@@ -21,7 +21,6 @@ public class ChildOrder {
         this.orderId = orderId;
         this.quantity = quantity;
         this.price = price;
-        this.state = state;
     }
 
     public Side getSide() {

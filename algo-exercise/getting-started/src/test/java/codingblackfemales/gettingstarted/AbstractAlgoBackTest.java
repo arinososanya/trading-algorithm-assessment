@@ -26,6 +26,7 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
     protected AlgoContainer container;
 
     @Override
+    // Setting up the pipes
     public Sequencer getSequencer() {
         final TestNetwork network = new TestNetwork();
         final Sequencer sequencer = new DefaultSequencer(network);

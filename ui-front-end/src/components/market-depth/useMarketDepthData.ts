@@ -60,7 +60,7 @@ export const useMarketDepthData = (schema: TableSchema) => {
 
   const datasourceMessageHandler: SubscribeCallback = useCallback(
     (message) => {
-      console.log({ message });
+//       console.log({ message });
       if (message.type === "viewport-update") {
         if (message.rows) {
           dataStore.update(message.rows);
