@@ -60,12 +60,12 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         encoder.instrumentId(123L);
 
         encoder.askBookCount(3)
-                .next().price(100L).size(101L)
+                .next().price(100L).size(101L) //lowest price (lowest to highest)
                 .next().price(110L).size(200L)
                 .next().price(115L).size(5000L);
 
         encoder.bidBookCount(3)
-                .next().price(98L).size(100L)
+                .next().price(97L).size(100L) // Highest price (highest to lowest)
                 .next().price(95L).size(200L)
                 .next().price(91L).size(300L);
 
@@ -91,14 +91,14 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         encoder.instrumentId(123L);
 
         encoder.askBookCount(3)
-                .next().price(200L).size(50L)
-                .next().price(160L).size(55L)
-                .next().price(120L).size(5000L);
+                .next().price(300L).size(50L)
+                .next().price(190L).size(55L)
+                .next().price(185L).size(60L);
 
         encoder.bidBookCount(3)
-                .next().price(98L).size(100L)
-                .next().price(95L).size(200L)
-                .next().price(91L).size(300L);
+                .next().price(298L).size(100L)
+                .next().price(295L).size(200L)
+                .next().price(291L).size(300L);
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
         encoder.source(Source.STREAM);
@@ -122,12 +122,12 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         encoder.instrumentId(123L);
 
         encoder.askBookCount(3)
-                .next().price(800L).size(50L)
+                .next().price(200L).size(50L) // Highest price
                 .next().price(160L).size(55L)
                 .next().price(120L).size(5000L);
 
         encoder.bidBookCount(3)
-                .next().price(98L).size(100L)
+                .next().price(98L).size(100L) // Highest price
                 .next().price(95L).size(200L)
                 .next().price(91L).size(300L);
 

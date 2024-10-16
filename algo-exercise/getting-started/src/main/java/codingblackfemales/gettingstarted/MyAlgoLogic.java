@@ -5,7 +5,6 @@ import codingblackfemales.action.CancelChildOrder;
 import codingblackfemales.action.CreateChildOrder;
 import codingblackfemales.action.NoAction;
 import codingblackfemales.algo.AlgoLogic;
-import codingblackfemales.collection.extrusive.Map;
 import codingblackfemales.sotw.ChildOrder;
 import codingblackfemales.sotw.SimpleAlgoState;
 import codingblackfemales.sotw.marketdata.AskLevel;
@@ -14,8 +13,6 @@ import codingblackfemales.util.Util;
 import messages.order.Side;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
 import java.util.List;
 
 public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic interface. This class only contains abstract methods
@@ -25,6 +22,7 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
     private static final int MAX_TOTAL_ORDERS = 10;
     private static final double MAX_PRICE_DISTANCE_PERCENT = 0.05; // 5% distance threshold (for mid-price)
     private static final long MIN_SPREAD = 2; // I will only consider creating orders if the spread is at least 2
+    private static final double PROFIT_THRESHOLD = 0.02; // The algorithm will attempt to sell when it can make at least 2% profit
 
     @Override
     public Action evaluate(SimpleAlgoState state) { // State is an instance of SimpleAlgoState i.e it's an object of type SimpleAlgoState, that's passed to the evaluate method. The evaluate method returns an Action, which can be a CancelChildOrder, CreateChildOrder, or NoAction.
@@ -84,24 +82,37 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
         if (spread < MIN_SPREAD) {
             logger.info("[MYALGO] Spread too small for order creation: {}", spread);
             return NoAction.NoAction;
-        }else logger.info("[MYALGO] Spread is: {}", spread);
+        } else logger.info("[MYALGO] Spread is: {}", spread);
 
         // So we can visually see what the best bid and ask are
         logger.info("[MYALGO] Best Bid: {} @ {}, Best Ask: {} @ {}",
                 bidNearTouch.quantity, bidNearTouch.price,
                 askFarTouch.quantity, askFarTouch.price);
 
-        // Create order if conditions are met
+        // Create buy order if conditions are met
         var activeOrderCount = activeOrders.size();
         if (activeOrderCount < MAX_ORDERS) {
             // Place the buy order at the ask price to cross the spread
-            long price = askFarTouch.price;
+          long price = bidNearTouch.price + 1L;
             long quantity = Math.min(100, askFarTouch.quantity); // I'm still limiting quantity for risk management
             logger.info("[MYALGO] Creating new aggressive buy order: {} @ {}", quantity, price);
-            return new CreateChildOrder(Side.BUY, quantity, price );
+            return new CreateChildOrder(Side.BUY, quantity, price);
         }
 
-        // Match if ...
+
+        // Check if we have any filled buy orders to potentially sell
+        for(ChildOrder order : activeOrders) {
+            if (order.getSide() == Side.BUY && order.getFilledQuantity() > 0){
+                long remainingQuantity = order.getQuantity() - order.getFilledQuantity();
+                if (remainingQuantity > 0){
+                    long potentialSellPrice = (long)(order.getPrice() * (1 + PROFIT_THRESHOLD));
+                    if (potentialSellPrice <= askFarTouch.price){
+                        logger.info("[MYALGO] Creating sell order for partially filled buy order: {} @ {}", remainingQuantity, potentialSellPrice);
+                        return new CreateChildOrder(Side.SELL, remainingQuantity, potentialSellPrice);
+                    }
+                }
+            }
+        }
 
         return NoAction.NoAction;
 
