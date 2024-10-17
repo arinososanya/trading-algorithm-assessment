@@ -26,8 +26,9 @@ public class PassiveAlgoLogic implements AlgoLogic{
 
         final BidLevel nearTouch = state.getBidAt(0); // What offers are available at the bids: BidLevel; passive (more tentative) - near touch - second best price in queue?
 
-        long quantity = 75; // hard coded quantity that we want to buy
-        long price = nearTouch.price;
+        long quantity = 75;
+        long price = nearTouch.price - 1L;
+
 
         //until we have three child orders....
         if(state.getChildOrders().size() < 3){

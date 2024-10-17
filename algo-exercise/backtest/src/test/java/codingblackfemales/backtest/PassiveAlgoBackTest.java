@@ -130,6 +130,6 @@ public class PassiveAlgoBackTest extends SequencerTestCase {
         long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).get();
 
         //and: check that our algo state was updated to reflect our fills when the market data
-        assertEquals(225, filledQuantity);
+        assertEquals(0, filledQuantity);
     }
 }

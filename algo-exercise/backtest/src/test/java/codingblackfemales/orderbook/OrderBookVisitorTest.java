@@ -12,6 +12,62 @@ import static org.junit.Assert.assertNull;
 public class OrderBookVisitorTest {
 
     @Test
+    public void testInsertAtFirstLevelForAskBook(){
+
+        final AskBookSide side = new AskBookSide();
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.SELL, 1100, 21_000));
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.SELL, 1000, 10_500));
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.SELL, 1200, 35_000));
+
+
+        assertEquals(1000L, side.getFirstLevel().getPrice());
+        assertEquals(1100L, side.getFirstLevel().next().getPrice());
+        assertEquals(1200L, side.getFirstLevel().next().next().getPrice());
+
+        assertEquals(10_500L, side.getFirstLevel().getQuantity());
+        assertEquals(21_000L, side.getFirstLevel().next().getQuantity());
+        assertEquals(35_000L, side.getFirstLevel().next().next().getQuantity());
+
+        side.removeMarketDataOrders();
+
+        assertNull(side.getFirstLevel());
+
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.SELL, 1000, 11_500));
+
+        assertEquals(1000L, side.getFirstLevel().getPrice());
+        assertEquals(11_500L, side.getFirstLevel().getQuantity());
+        assertNull(side.getFirstLevel().next());
+    }
+
+    @Test
+    public void testInsertAtFirstLevelForBidBook(){
+
+        final BidBookSide side = new BidBookSide();
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.BUY, 1100, 21_000));
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.BUY, 1000, 10_500));
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.BUY, 1200, 35_000));
+
+
+        assertEquals(1200L, side.getFirstLevel().getPrice());
+        assertEquals(1100L, side.getFirstLevel().next().getPrice());
+        assertEquals(1000L, side.getFirstLevel().next().next().getPrice());
+
+        assertEquals(35_000L, side.getFirstLevel().getQuantity());
+        assertEquals(21_000L, side.getFirstLevel().next().getQuantity());
+        assertEquals(10_500L, side.getFirstLevel().next().next().getQuantity());
+
+        side.removeMarketDataOrders();
+
+        assertNull(side.getFirstLevel());
+
+        side.addMarketDataOrder(new MarketDataOrderFlyweight(Side.BUY, 1000, 11_500));
+
+        assertEquals(1000L, side.getFirstLevel().getPrice());
+        assertEquals(11_500L, side.getFirstLevel().getQuantity());
+        assertNull(side.getFirstLevel().next());
+    }
+
+    @Test
     public void testMarketDataAddRemovalVisitor(){
 
         final AskBookSide side = new AskBookSide();
