@@ -15,111 +15,124 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 
+
+/**
+ * *
+ * * My algo:
+ * * Creates and cancels child orders based on the distance from the mid-price.
+ * * 1. Cancels child orders that are
+ * *      a. too far from the mid-price threshold (more than 5% distance)
+ * *      b. partial fills
+ * * 2. Handles fully filled orders by attempting to create sell orders (sell them) at the profit threshold of 2%.
+ * * 3. Creates buy side child orders (above the best bid) if
+ * *      a. there are less than 3 active orders
+ * *      b. the order price is not too far from the mid-price threshold
+ * *
+ * *
+ * */
+
+
 public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic interface. This class only contains abstract methods
 
-    private static final Logger logger = LoggerFactory.getLogger(MyAlgoLogic.class);
-    private static final int MAX_ACTIVE_ORDERS = 3; // The maximum no. of Active orders allowed at any given time
-    private static final int MAX_TOTAL_ORDERS = 10; // The max. total number of orders (incl. active, filled, partially filled,canceled and rejected)
-    private static final double MAX_PRICE_DISTANCE_PERCENT = 0.05; // 5% distance threshold (for mid-price)
-//    private static final long MIN_SPREAD = 2; // I will only consider creating orders if the spread is at least 2
-    private static final double PROFIT_THRESHOLD = 0.02; // The algorithm will attempt to sell when it can make at least 2% profit
-    private int activeOrderCount = 0;
 
-    /********
-     *
-     * My algo:
-     * Creates and cancels child orders based on the distance from the mid-price.
-     * 1. Cancels child orders that are
-     *      a. too far from the mid-price threshold (more than 5% distance)
-     *      b. partial fills
-     * 2. Handles fully filled orders by attempting to create sell orders (sell them) at the profit threshold of 2%.
-     * 3. Creates buy side child orders (above the best bid) if
-     *      a. there are less than 3 active orders
-     *      b. the order price is not too far from the mid-price threshold
-     *
-     * Note:
-     * Creation of buy orders happens only if no cancellations or sell orders were created in the current evaluation.
-     */
+
+
+    private static final Logger logger = LoggerFactory.getLogger(MyAlgoLogic.class);
+    private static final int MAX_ACTIVE_ORDERS = 3;
+    private static final int MAX_TOTAL_ORDERS = 10;
+    private static final double MAX_PRICE_DISTANCE_PERCENT = 0.05;
+    //    private static final long MIN_SPREAD = 2;
+    private static final double PROFIT_THRESHOLD = 0.02;
 
 
     @Override
-    public Action evaluate(SimpleAlgoState state) { // State is an instance of SimpleAlgoState i.e it's an object of type SimpleAlgoState, that's passed to the evaluate method. The evaluate method returns an Action, which can be a CancelChildOrder, CreateChildOrder, or NoAction.
-        var orderBookAsString = Util.orderBookToString(state); // checks the current state of the order book and logs it
-        logger.info("[MYALGO] The state of the order book is:\n" + orderBookAsString);
 
+    /*Initial checks and setup to:
+    1. Check the state of the order book
+    2. Check if the total no. of orders exceeds the max. limit
+    3. Retrieve active orders and update the count
+    4. Get the best ask and bid prices
+    5. Checks for incomplete market data
+    6. Calculates my mid-price threshold.
+    */
 
-        var totalOrderCount = state.getChildOrders().size(); // get the total number of child orders, regardless of their current status (rejected, cancelled, filled, active(live) orders etc.)
-        //   My exit condition... this is a safety check for if there are more than 10 child orders, then the algo does nothing
-        if (totalOrderCount > MAX_TOTAL_ORDERS) {
-            return NoAction.NoAction;
-        }
+    public Action evaluate(SimpleAlgoState state) {
+            logger.info("[MYALGO] The state of the order book is:\n" + Util.orderBookToString(state));
 
-
-        // Update activeOrderCount based on the current state
-        List<ChildOrder> activeOrders = state.getActiveChildOrders();
-        activeOrderCount = activeOrders.size();
-
-        // 2. Get the market data (best bid and ask, spread etc.)
-        final AskLevel askFarTouch = state.getAskAt(0);
-        final BidLevel bidNearTouch = state.getBidAt(0);
-
-        // Make sure both values are not null (consider exception handling here)
-        if (askFarTouch == null || bidNearTouch == null) {
-            logger.warn("[MYALGO] Incomplete market data - unable to make decisions");
-            return NoAction.NoAction;
-        }
-
-        // Calculate the mid-price (the core of my logic)
-        double midPrice = (askFarTouch.price + bidNearTouch.price) / 2.0; // the average of the best bid and best ask prices:
-
-
-        // 1. Check if we need to cancel old orders by comparing the distance of the order to the mid-price and seeing if this distance is within the threshold
-        // Also, we handle partial fills
-        for (ChildOrder order : activeOrders) { // For each active order, the algorithm calculates how far the order's price is from this mid-price as a percentage
-            double priceDistance = Math.abs(order.getPrice() - midPrice) / midPrice; // precentage diff
-
-            if (priceDistance > MAX_PRICE_DISTANCE_PERCENT) {
-                logger.info("[MYALGO] Cancelling order {} due to excessive price distance: {}%", order.getOrderId(), String.format("%.2f", priceDistance * 100));
-                activeOrderCount--;
-                return new CancelChildOrder(order);
+            if (state.getChildOrders().size() > MAX_TOTAL_ORDERS) {
+                return NoAction.NoAction;
             }
-            if (order.getFilledQuantity() > 0 && order.getFilledQuantity() < order.getQuantity()) {
-                logger.info("[MYALGO] Cancelling partially filled order: {}", order.getOrderId());
-                return new CancelChildOrder(order);
+
+            List<ChildOrder> activeOrders = state.getActiveChildOrders();
+            int activeOrderCount = activeOrders.size();
+
+            final AskLevel askFarTouch = state.getAskAt(0);
+            final BidLevel bidNearTouch = state.getBidAt(0);
+
+            if (askFarTouch == null || bidNearTouch == null) {
+                logger.warn("[MYALGO] Incomplete market data - unable to make decisions");
+                return NoAction.NoAction;
             }
-        }
 
+            double midPrice = (askFarTouch.price + bidNearTouch.price) / 2.0;
 
-//     2. Handle fully filled buy orders:
-        for (ChildOrder order : activeOrders) {
-            if (order.getSide() == Side.BUY && order.getFilledQuantity() == order.getQuantity()) {
-                long lastBuyPrice = order.getPrice();
-                long potentialSellPrice = (long) (lastBuyPrice * (1 + PROFIT_THRESHOLD));
-                if (potentialSellPrice <= askFarTouch.price) {
-                    logger.info("[MYALGO] Creating sell order: {} @ {}", order.getQuantity(), potentialSellPrice);
-                    return new CreateChildOrder(Side.SELL, order.getQuantity(), potentialSellPrice);
+            boolean cancellationOccurred = false;
+
+            // Step 1: I am checking for cancellations
+            for (ChildOrder order : activeOrders) {
+                if (shouldCancelOrder(order, midPrice)) {
+                    cancellationOccurred = true;
+                    logger.info("[MYALGO] Cancelling order: {}", order.getOrderId());
+                    return new CancelChildOrder(order);
                 }
             }
+
+            // Step 2: Check for sell opportunities
+            for (ChildOrder order : activeOrders) {
+                if (shouldCreateSellOrder(order, askFarTouch.price)) {
+                    Action sellAction = createSellOrder(order);
+                    logger.info("[MYALGO] Creating sell order: {}", sellAction);
+                    return sellAction;
+                }
+            }
+
+            // Step 3: Create new buy order if conditions are met
+            if (activeOrderCount < MAX_ACTIVE_ORDERS && canCreateBuyOrder(bidNearTouch, midPrice)) {
+                Action buyAction = createBuyOrder(bidNearTouch, askFarTouch);
+                logger.info("[MYALGO] Creating buy order: {}", buyAction);
+                return buyAction;
+            }
+            return NoAction.NoAction;
         }
 
-// Create a new buy order if conditions are met
-        if (activeOrderCount < MAX_ACTIVE_ORDERS) {
+        // My helper methods
+        private boolean shouldCancelOrder (ChildOrder order,double midPrice){
+            double priceDistance = Math.abs(order.getPrice() - midPrice) / midPrice;
+            return priceDistance > MAX_PRICE_DISTANCE_PERCENT ||
+                    (order.getFilledQuantity() > 0 && order.getFilledQuantity() < order.getQuantity());
+        }
+
+        private boolean shouldCreateSellOrder (ChildOrder order,long askPrice){
+            return order.getSide() == Side.BUY &&
+                    order.getFilledQuantity() == order.getQuantity() &&
+                    (long) (order.getPrice() * (1 + PROFIT_THRESHOLD)) <= askPrice;
+        }
+
+        private Action createSellOrder (ChildOrder buyOrder){
+            long sellPrice = (long) (buyOrder.getPrice() * (1 + PROFIT_THRESHOLD));
+            return new CreateChildOrder(Side.SELL, buyOrder.getQuantity(), sellPrice);
+        }
+
+        private boolean canCreateBuyOrder (BidLevel bidNearTouch,double midPrice){
             long buyPrice = bidNearTouch.price + 1L;
             double priceDistance = Math.abs(buyPrice - midPrice) / midPrice;
-
-            if (priceDistance <= MAX_PRICE_DISTANCE_PERCENT) {
-                long quantity = Math.min(100, askFarTouch.quantity);
-                logger.info("[MYALGO] Creating new buy order: {} @ {} (Distance from mid-price: {}%)",
-                        quantity, buyPrice, String.format("%.2f", priceDistance * 100));
-                return new CreateChildOrder(Side.BUY, quantity, buyPrice);
-            }
+            return priceDistance <= MAX_PRICE_DISTANCE_PERCENT;
         }
 
-        return NoAction.NoAction;
-    }
-}
+        private Action createBuyOrder (BidLevel bidNearTouch, AskLevel askFarTouch){
+            long buyPrice = bidNearTouch.price + 1L;
+            long quantity = Math.min(100, askFarTouch.quantity);
+            return new CreateChildOrder(Side.BUY, quantity, buyPrice);
+        }
 
-//
-//
-//
-//
+    }
