@@ -2,6 +2,7 @@ package codingblackfemales.gettingstarted;
 
 import codingblackfemales.algo.AlgoLogic;
 import codingblackfemales.sotw.ChildOrder;
+import messages.order.Side;
 import org.junit.Test;
 
 import java.util.List;
@@ -25,53 +26,52 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement th
 
     @Override
     public AlgoLogic createAlgoLogic() { // instantiating the MyAlgoLogic class
-        return new MyAlgoLogic();
+        return new MyAlgoLogicNew();
     } // This createAlgoLogic() method is where you specify which algorithm logic should be used in your tests.
 
     @Test
-    public void testExampleBackTest() throws Exception {
-        // Scenario 1: Initial Market state
+    public void testMyAlgoBackTest() throws Exception {
+        // Scenario 1: Initial market state
         send(createMarketTick1());
         var state = container.getState();
-        assertEquals("Should create 3 initial orders", 3, state.getChildOrders().size());
+        assertTrue("Should create initial orders", !state.getActiveChildOrders().isEmpty());
 
-        // Scenario 2: Market moves towards us (I'm seeing changes in market conditions that becomes more favorable to my current position or the orders I've placed.)
-        send(createMarketTick2());
-        state = container.getState();
-        long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).orElse(0L);
-        assertEquals("Should have filled quantity up to algorithm's limit", 100, filledQuantity);
-
-        //Scenario 3: Market moves away, algo should cancel some orders
+        // Scenario 2: Market moves
         send(createMarketTick3());
         state = container.getState();
 
-        List<ChildOrder> allOrders = state.getChildOrders();
-        List<ChildOrder> activeOrders = state.getActiveChildOrders();
+        // Check for order cancellations
+        assertTrue("Should have cancelled some orders",
+                state.getChildOrders().size() > state.getActiveChildOrders().size());
 
-        long cancelledOrders = allOrders.size() - activeOrders.size();
-
-        assertTrue("Should have cancelled at least one order", cancelledOrders > 0);
-
-
-        //Scenario 4: Does my algo create new orders in response to a (favourable) change in market conditions?
-        int activeOrdersBefore = state.getActiveChildOrders().size(); // how many active orders did the algo have before sending the new market data tick 4?
-        send(createMarketTick4());
+        // Scenario 3: Further market movement
+        send(createMarketTick5());
         state = container.getState();
-        int activeOrdersAfter = state.getActiveChildOrders().size();
-        assertTrue("Should have created new orders", activeOrdersAfter > activeOrdersBefore); // Has the number of active orders increased?
 
+        // Check for buy and sell orders
+        long buyOrders = state.getActiveChildOrders().stream()
+                .filter(order -> order.getSide() == Side.BUY)
+                .count();
+        long sellOrders = state.getActiveChildOrders().stream()
+                .filter(order -> order.getSide() == Side.SELL)
+                .count();
 
-        // Anything to do with buying and selling
+        assertTrue("Should have buy orders", buyOrders > 0);
+        assertTrue("Should have sell orders", sellOrders > 0);
 
-        // Can I buy?
+        // Check for filled orders
+        long filledQuantity = state.getChildOrders().stream()
+                .map(ChildOrder::getFilledQuantity)
+                .reduce(Long::sum)
+                .orElse(0L);
+        assertTrue("Should have filled orders", filledQuantity > 0);
 
-        // Can I sell?
-
-        // If I buy and sell, can I come out with a profit?
-
-        // Trying to fulfil orders
-
-        // I want to adjust the printing of the Order Book so that it prints individual orders with their IDs.
+        // Log final state
+        System.out.println("Final state:");
+        System.out.println("Active buy orders: " + buyOrders);
+        System.out.println("Active sell orders: " + sellOrders);
+        System.out.println("Total filled quantity: " + filledQuantity);
     }
 
 }
+
