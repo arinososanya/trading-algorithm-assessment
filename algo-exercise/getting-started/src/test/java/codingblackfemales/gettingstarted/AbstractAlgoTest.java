@@ -59,15 +59,16 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
 
+        // I swapped the order of the code to see if it would change the display
+        encoder.bidBookCount(3)
+                .next().price(98L).size(100L) // Highest price (highest to lowest)
+                .next().price(95L).size(200L)
+                .next().price(91L).size(300L);
+
         encoder.askBookCount(3)
                 .next().price(100L).size(101L) //lowest price (lowest to highest)
                 .next().price(110L).size(200L)
                 .next().price(115L).size(5000L);
-
-        encoder.bidBookCount(3)
-                .next().price(97L).size(100L) // Highest price (highest to lowest)
-                .next().price(95L).size(200L)
-                .next().price(91L).size(300L);
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
         encoder.source(Source.STREAM);
@@ -90,15 +91,16 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
 
-        encoder.askBookCount(3)
-                .next().price(300L).size(50L)
-                .next().price(190L).size(55L)
-                .next().price(185L).size(60L);
-
         encoder.bidBookCount(3)
-                .next().price(298L).size(100L)
-                .next().price(295L).size(200L)
-                .next().price(291L).size(300L);
+                .next().price(97L).size(150L)
+                .next().price(94L).size(250L)
+                .next().price(90L).size(350L);
+
+        encoder.askBookCount(3)
+                .next().price(99L).size(120L)
+                .next().price(105L).size(220L)
+                .next().price(118L).size(4800L);
+
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
         encoder.source(Source.STREAM);
