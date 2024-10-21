@@ -3,7 +3,11 @@ package codingblackfemales.gettingstarted;
 import codingblackfemales.algo.AlgoLogic;
 import codingblackfemales.sotw.ChildOrder;
 import org.junit.Test;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test plugs together all of the infrastructure, including the order book (which you can trade against)
@@ -26,33 +30,48 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement th
 
     @Test
     public void testExampleBackTest() throws Exception {
-        //create a sample market data tick....
-        send(createTick());
-
-        //ADD asserts when you have implemented your algo logic
-        assertEquals(container.getState().getChildOrders().size(), 3);
-
-        //when: market data moves towards us
-        send(createTick2());
-
-        //then: get the state by accessing the container (which holds my algo) from the superclass
+        // Scenario 1: Initial Market state
+        send(createMarketTick1());
         var state = container.getState();
+        assertEquals("Should create 3 initial orders", 3, state.getChildOrders().size());
 
-        //Check things like filled quantity, cancelled order count etc....
-        long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).get();
+        // Scenario 2: Market moves towards us (I'm seeing changes in market conditions that becomes more favorable to my current position or the orders I've placed.)
+        send(createMarketTick2());
+        state = container.getState();
+        long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).orElse(0L);
+        assertEquals("Should have filled quantity up to algorithm's limit", 100, filledQuantity);
 
-        //and: check that our algo state was updated to reflect our fills when the market data
-        assertEquals(101, filledQuantity);
+        //Scenario 3: Market moves away, algo should cancel some orders
+        send(createMarketTick3());
+        state = container.getState();
+
+        List<ChildOrder> allOrders = state.getChildOrders();
+        List<ChildOrder> activeOrders = state.getActiveChildOrders();
+
+        long cancelledOrders = allOrders.size() - activeOrders.size();
+
+        assertTrue("Should have cancelled at least one order", cancelledOrders > 0);
+
+
+        //Scenario 4: Does my algo create new orders in response to a (favourable) change in market conditions?
+        int activeOrdersBefore = state.getActiveChildOrders().size(); // how many active orders did the algo have before sending the new market data tick 4?
+        send(createMarketTick4());
+        state = container.getState();
+        int activeOrdersAfter = state.getActiveChildOrders().size();
+        assertTrue("Should have created new orders", activeOrdersAfter > activeOrdersBefore); // Has the number of active orders increased?
+
+
+        // Anything to do with buying and selling
+
+        // Can I buy?
+
+        // Can I sell?
+
+        // If I buy and sell, can I come out with a profit?
+
+        // Trying to fulfil orders
+
+        // I want to adjust the printing of the Order Book so that it prints individual orders with their IDs.
     }
-    // Anything to do with buying and selling
 
-    // Can I buy?
-
-    // Can I sell?
-
-    // If I buy and sell, can I come out with a profit?
-
-    // Trying to fulfil orders
-
-    // I want to adjust the printing of the Order Book so that it prints individual orders with their IDs.
 }

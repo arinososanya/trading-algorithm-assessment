@@ -40,7 +40,7 @@ public class MyAlgoTest extends AbstractAlgoTest {
     @Test
     public void testDispatchThroughSequencer() throws Exception {
 
-        //testing the data from the order book ... create a sample market data tick....
+        //testing the data from the order book (AbstractAlgoTest) ... create a sample market data tick....
         send(createTick());
 
         //simple assert to check we had 3 orders created
