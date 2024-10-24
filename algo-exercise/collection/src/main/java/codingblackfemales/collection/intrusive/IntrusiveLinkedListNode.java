@@ -62,6 +62,28 @@ public abstract class IntrusiveLinkedListNode<TYPEOF extends IntrusiveLinkedList
         if (previous != null) {
             previous.next = next;
         }
+
+        if(next != null) {
+            next.previous = previous;
+        }
+    }
+
+
+    public void insertFirst(TYPEOF self, TYPEOF level) {
+        level.next = self;
+        this.previous = level;
+
+        setFirst(level);
+        level.last = this.last;
+        setSize(size()+1);
+    }
+
+    public void insertAfter(TYPEOF self, TYPEOF current, TYPEOF next) {
+        self.next = current;
+        current.previous = self;
+        current.next = next;
+        next.previous = current;
+        setSize(size()+1);
     }
 
     private void setFirst(TYPEOF first) {

@@ -43,7 +43,9 @@ public abstract class OrderBookSide {
         if(isNewFirstLevel(levelToVisit, visitor)){
             OrderBookLevel level = visitor.onNoFirstLevel();
             if(level != null) {
-                level.next(levelToVisit);
+                if(levelToVisit != null) {
+                    levelToVisit.insertFirst(levelToVisit, level);
+                }
                 setFirstLevel(level);
                 level.accept(visitor, this);
             }
@@ -68,7 +70,8 @@ public abstract class OrderBookSide {
             if (priceToFind == levelToVisit.getPrice()) {
                 levelToVisit.accept(visitor, this);
             } else if (isBetweenLevels(levelToVisit, nextLevel, priceToFind)) {
-                visitor.missingBookLevel(levelToVisit, nextLevel, priceToFind);
+                OrderBookLevel level = visitor.missingBookLevel(levelToVisit, nextLevel, priceToFind);
+                levelToVisit.insertAfter(levelToVisit,level, nextLevel);
             } else if (isNewDeepestLevel(levelToVisit, nextLevel, priceToFind)) {
                 OrderBookLevel level = visitor.missingBookLevel(levelToVisit, nextLevel, priceToFind);
                 levelToVisit.last().add(level);

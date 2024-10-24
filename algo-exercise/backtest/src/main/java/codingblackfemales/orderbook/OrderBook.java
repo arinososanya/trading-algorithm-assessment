@@ -86,7 +86,7 @@ public class OrderBook extends MarketDataEventListener {
         for(AskBookUpdateDecoder.AskBookDecoder decoder : askBookUpdateDecoder.askBook()) {
             final long price = decoder.price();
             final long quantity = decoder.size();
-            var marketOrder = new MarketDataOrderFlyweight(Side.SELL, price, quantity);
+            var marketOrder = new MarketDataOrderFlyweight(Side.BUY, price, quantity);
             logger.debug("[ORDERBOOK] ASK: Adding order" + marketOrder);
             if(canMatch(Side.SELL, price)){
                 matchMarketDataOrder(marketOrder);
@@ -96,8 +96,8 @@ public class OrderBook extends MarketDataEventListener {
         }
     }
 
-    private void addOrMatchBidMarketDataOrders(BidBookUpdateDecoder askBookUpdateDecoder){
-        for(BidBookUpdateDecoder.BidBookDecoder decoder : askBookUpdateDecoder.bidBook()) {
+    private void addOrMatchBidMarketDataOrders(BidBookUpdateDecoder bidBookUpdateDecoder){
+        for(BidBookUpdateDecoder.BidBookDecoder decoder : bidBookUpdateDecoder.bidBook()) {
             final long price = decoder.price();
             final long quantity = decoder.size();
             var marketOrder = new MarketDataOrderFlyweight(Side.SELL, price, quantity);
