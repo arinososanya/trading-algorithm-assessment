@@ -23,6 +23,8 @@ public class ProfitableAlgoLogic implements AlgoLogic {
     private static final Logger logger = LoggerFactory.getLogger(ProfitableAlgoLogic.class);
     private static final int MAX_ACTIVE_ORDERS = 2;    // Reduced to control order flow
     private static final int PROFIT_TICKS = 2;         // Minimum profit target
+    private static final int STOP_LOSS_TICKS = 5;         // Minimum stop loss
+    double bufferPercentage = 0.01;
 
     @Override
     public Action evaluate(SimpleAlgoState state) {
@@ -30,6 +32,7 @@ public class ProfitableAlgoLogic implements AlgoLogic {
             List<ChildOrder> activeOrders = state.getActiveChildOrders();
             BidLevel bestBid = state.getBidAt(0);
             AskLevel bestAsk = state.getAskAt(0);
+            double bufferAmount = bestBid.getPrice() * bufferPercentage;
 
             logger.info("[MYALGO] The state of the order book is:\n" + Util.orderBookToString(state));
             logger.info("[MYALGO] Active orders: {}", activeOrders.size());
@@ -40,6 +43,7 @@ public class ProfitableAlgoLogic implements AlgoLogic {
                 return NoAction.NoAction;
             }
 
+
             // First check for orders that need canceling
             for (ChildOrder order : activeOrders) {
                 if (shouldCancelOrder(order, bestBid, bestAsk)) {
@@ -49,21 +53,30 @@ public class ProfitableAlgoLogic implements AlgoLogic {
             }
 
             // Look for completely filled buys that need sell orders
-            for (ChildOrder order : activeOrders) {
-                if (order.getSide() == Side.BUY &&
-                        order.getFilledQuantity() == order.getQuantity() && // Only fully filled orders
-                        !hasOpenSellOrder(activeOrders, order)) {
+            for (ChildOrder buyOrder : activeOrders) {
+                if (buyOrder.getSide() == Side.BUY &&
+                        buyOrder.isFullyFilled()) {
 
-                    logger.info("[MYALGO] Creating sell for fully filled buy order {} at profit target",
-                            order.getOrderId());
-                    return createProfitableSellOrder(order);
+                    // Check for profitable sell or cancel existing sell
+                    if (hasOpenSellOrder(activeOrders, buyOrder)) {
+                        ChildOrder existingSellOrder = orderPairs.get(buyOrder);
+                        if (existingSellOrder.getPrice() < bestBid.price + PROFIT_TICKS) {
+                            logger.info("[MYALGO] Cancelling existing sell {} and creating new sell for buy order {} at profit target",
+                                    existingSellOrder.getOrderId(), buyOrder.getOrderId());
+                            return cancelAndCreateSellOrder(buyOrder);
+                        }
+                    } else {
+                        logger.info("[MYALGO] Creating sell for fully filled buy order {} at profit target",
+                                buyOrder.getOrderId());
+                        return createProfitableSellOrder(buyOrder, bufferAmount);
+                    }
                 }
             }
 
             // Create new buy only if we have no orders at all
             if (activeOrders.isEmpty()) {
                 logger.info("[MYALGO] No active orders - creating new buy");
-                return createBuyOrder(bestBid, bestAsk);
+                return createBuyOrder(state, bestBid, bestAsk);
             }
 
             logger.info("[MYALGO] No action needed");
@@ -79,12 +92,16 @@ public class ProfitableAlgoLogic implements AlgoLogic {
         return activeOrders.stream().anyMatch(order -> order.getSide() == Side.SELL && orderPairs.containsKey(order));
     }
 
-    private Action createProfitableSellOrder(ChildOrder buyOrder) {
+    private Action createProfitableSellOrder(ChildOrder buyOrder, double bufferAmount) {
         long sellPrice = buyOrder.getPrice() + PROFIT_TICKS; // Sell higher than our buy
+        long stopLossPrice = buyOrder.getPrice() - STOP_LOSS_TICKS; // Set a stop-loss
 
-        logger.info("[MYALGO] Creating sell order: qty={}, price={} for buy order {}",
+
+
+        logger.info("[MYALGO] Creating sell order: qty={}, price={}, stop loss={} for buy order {}",
                 buyOrder.getFilledQuantity(),
                 sellPrice,
+                stopLossPrice,
                 buyOrder.getOrderId());
 
         return new CreateChildOrder(
@@ -94,13 +111,12 @@ public class ProfitableAlgoLogic implements AlgoLogic {
         );
     }
 
-    private Action createBuyOrder(BidLevel bestBid, AskLevel bestAsk) {
-        // Place buy order one tick above best bid to be competitive
+    private Action createBuyOrder(SimpleAlgoState state, BidLevel bestBid, AskLevel bestAsk) {
         long buyPrice = bestBid.price + 1;
 
-        // Don't buy if our price would cross the spread
-        if (buyPrice >= bestAsk.price) {
-            return NoAction.NoAction;
+        // Only for the first buy order, allow buying at the ask price
+        if (state.getChildOrders().isEmpty()) {
+            buyPrice = Math.min(buyPrice, bestAsk.price);
         }
 
         return new CreateChildOrder(
@@ -111,11 +127,6 @@ public class ProfitableAlgoLogic implements AlgoLogic {
     }
 
     private boolean shouldCancelOrder(ChildOrder order, BidLevel bestBid, AskLevel bestAsk) {
-        // Cancel orders that are too old
-        if (order.getAgeInTicks() > 10) {
-            return true;
-        }
-
         if (order.getSide() == Side.BUY && !order.isFullyFilled()) {
             // Cancel unfilled/partially filled buy if market moved significantly
             return order.getPrice() < bestBid.price || order.getPrice() >= bestAsk.price;
@@ -125,5 +136,12 @@ public class ProfitableAlgoLogic implements AlgoLogic {
         }
 
         return false;
+    }
+
+    private Action cancelAndCreateSellOrder(ChildOrder buyOrder) {
+        ChildOrder existingSellOrder = orderPairs.get(buyOrder);
+        orderPairs.remove(buyOrder); // Remove the old sell order
+
+        return new CancelChildOrder(existingSellOrder); // Cancel the old sell order
     }
 }
