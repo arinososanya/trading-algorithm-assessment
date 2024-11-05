@@ -23,5 +23,5 @@ const testData: MarketDepthRow[] = [ // a JavaScript array with some TypeScript 
 export const MarketDepthFeature = () => {
   const data = useMarketDepthData(schemas.prices); // this is a hook. It is using the useMarketDepthData hook to fetch the market depth data. This hook is likely a custom hook defined in your project,
   //responsible for making API calls or accessing data from a data source.getting back the data for you from the Market Depth Source - it gets back 10 rows of data from the source and keeps re-rendering. The placeholder would update everytime the data comes in
-  return <MarketDepthPanel data={testData} />; // Replace 'Placeholder' with your own React component
+  return <MarketDepthPanel data={data} />; // Replace 'Placeholder' with your own React component
 };
