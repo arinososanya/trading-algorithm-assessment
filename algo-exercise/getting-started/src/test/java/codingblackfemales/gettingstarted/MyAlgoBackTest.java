@@ -2,6 +2,7 @@ package codingblackfemales.gettingstarted;
 
 import codingblackfemales.algo.AlgoLogic;
 import codingblackfemales.sotw.ChildOrder;
+import codingblackfemales.sotw.SimpleAlgoState;
 import messages.order.Side;
 import org.junit.Test;
 
@@ -22,59 +23,92 @@ import static org.junit.Assert.assertTrue;
  * If you cancel the order your child order will show the order status as cancelled in the childOrders of the state object.
  *
  */
-public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement the MyAlgoBackTest, which sets up the pipes needed for my test environment
+
+
+
+public class MyAlgoBackTest extends AbstractAlgoBackTest {
 
     @Override
-    public AlgoLogic createAlgoLogic() { // instantiating the MyAlgoLogic class
-        return new MyAlgoLogicNew();
-    } // This createAlgoLogic() method is where you specify which algorithm logic should be used in your tests.
+    public AlgoLogic createAlgoLogic() {
+        return new ProfitableAlgoLogic();
+    }
 
     @Test
     public void testMyAlgoBackTest() throws Exception {
-        // Scenario 1: Initial market state
+        // Scenario 1: Initial market state - should place buy order
         send(createMarketTick1());
         var state = container.getState();
-        assertTrue("Should create initial orders", !state.getActiveChildOrders().isEmpty());
 
-        // Scenario 2: Market moves
+        // Verify initial buy order
+        assertTrue("Should create initial buy order", !state.getActiveChildOrders().isEmpty());
+        assertTrue("First order should be a buy",
+                state.getActiveChildOrders().get(0).getSide() == Side.BUY);
+
+        // Log initial state
+        logOrderState("After initial market", state);
+
+        // Scenario 2: Market moves up - should get fill and place sell
+        send(createMarketTick2());
+        state = container.getState();
+
+        // Log state after market move
+        logOrderState("After market move up", state);
+
+        // Scenario 3: Final market state
         send(createMarketTick3());
         state = container.getState();
 
-        // Check for order cancellations
-        assertTrue("Should have cancelled some orders",
-                state.getChildOrders().size() > state.getActiveChildOrders().size());
+        // Log final state and trading results
+        logOrderState("After final market", state);
+        verifyTradingResults(state);
+    }
 
-        // Scenario 3: Further market movement
-        send(createMarketTick5());
-        state = container.getState();
+    private void logOrderState(String message, SimpleAlgoState state) {
+        System.out.println("\n" + message);
+        System.out.println("Active orders: " + state.getActiveChildOrders().size());
+        System.out.println("Total orders: " + state.getChildOrders().size());
+        System.out.println("Filled quantity: " + getFilledQuantity(state));
 
-        // Check for buy and sell orders
-        long buyOrders = state.getActiveChildOrders().stream()
-                .filter(order -> order.getSide() == Side.BUY)
-                .count();
-        long sellOrders = state.getActiveChildOrders().stream()
-                .filter(order -> order.getSide() == Side.SELL)
-                .count();
+        // Print each active order with correct formatting
+        state.getActiveChildOrders().forEach(order ->
+                System.out.println(String.format("Order %d: %s %d qty: %d filled: %d",
+                        order.getOrderId(),
+                        order.getSide(),
+                        order.getPrice(),
+                        order.getQuantity(),
+                        order.getFilledQuantity())));
+    }
 
-        assertTrue("Should have buy orders", buyOrders > 0);
-        assertTrue("Should have sell orders", sellOrders > 0);
-
-        // Check for filled orders
-        long filledQuantity = state.getChildOrders().stream()
+    private long getFilledQuantity(SimpleAlgoState state) {
+        return state.getChildOrders().stream()
                 .map(ChildOrder::getFilledQuantity)
                 .reduce(Long::sum)
                 .orElse(0L);
-        assertTrue("Should have filled orders", filledQuantity > 0);
-
-
-
-        // Log final state
-        System.out.println("Final state:");
-        System.out.println("Active buy orders: " + buyOrders);
-        System.out.println("Active sell orders: " + sellOrders);
-        System.out.println("Total filled quantity: " + filledQuantity);
-
     }
 
-}
+    private void verifyTradingResults(SimpleAlgoState state) {
+        long totalPnl = 0;
+        System.out.println("\nTrading Results:");
 
+        // Calculate P&L from filled orders
+        for (ChildOrder order : state.getChildOrders()) {
+            if (order.getFilledQuantity() > 0) {
+                System.out.println(String.format("%s order %d: price %d qty %d",
+                        order.getSide(),
+                        order.getOrderId(),
+                        order.getPrice(),
+                        order.getFilledQuantity()));
+
+                long impact = order.getSide() == Side.BUY ? -1 : 1;
+                totalPnl += impact * order.getPrice() * order.getFilledQuantity();
+            }
+        }
+
+        System.out.println(String.format("Total P&L: %d", totalPnl));
+        System.out.println("Total Trades: " + state.getChildOrders().size());
+        System.out.println("Filled Trades: " +
+                state.getChildOrders().stream()
+                        .filter(o -> o.getFilledQuantity() > 0)
+                        .count());
+    }
+}

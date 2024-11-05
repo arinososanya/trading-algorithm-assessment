@@ -68,21 +68,21 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
         //write the encoded output to the direct buffer
         encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
 
-        //set the fields to desired values
+        //Initial market state - narrow spread to trigger buy
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
         encoder.source(Source.STREAM);
 
         encoder.bidBookCount(3)
-                .next().price(98L).size(100L) //highest price (highest to lowest)
-                .next().price(95L).size(200L)
-                .next().price(91L).size(300L);
+                .next().price(100L).size(100L) // Best bid 98 , highest price (highest to lowest)
+                .next().price(96L).size(200L)
+                .next().price(94L).size(300L);
 
         encoder.askBookCount(4)
-                .next().price(100L).size(101L) //lowest price (lowest to highest)
-                .next().price(110L).size(200L)
-                .next().price(115L).size(5000L)
-                .next().price(119L).size(5600L);
+                .next().price(102L).size(100L) // Best ask 99 (spread =1), lowest price (lowest to highest)
+                .next().price(101L).size(200L)
+                .next().price(100L).size(300L)
+                .next().price(99L).size(400L);
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
 
@@ -91,31 +91,31 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
 
     protected UnsafeBuffer createMarketTick2(){
 
-        // Bid sizes have decreased, but bid prices have increased. Ask prices have also come down, slightly increasing liquidity at the top of the book (easier to trade at these prices)
+        // Market moves up which should trigger a profitable sell. Prices are moving up
         final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
         final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
 
-        //write the encoded output to the direct buffer
+        //writing the encoded output to the direct buffer
         encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
 
-        //set the fields to desired values
+
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
         encoder.source(Source.STREAM);
 
         encoder.bidBookCount(3)
-                .next().price(97L).size(150L)
-                .next().price(94L).size(250L)
-                .next().price(90L).size(350L);
+                .next().price(101L).size(150L) // prices are moving up, Best bid moved up to 101
+                .next().price(100L).size(250L)
+                .next().price(99L).size(350L);
 
         encoder.askBookCount(4)
-                .next().price(99L).size(120L)
-                .next().price(105).size(220L)
-                .next().price(112L).size(4800L)
-                .next().price(118L).size(5400L);
+                .next().price(102L).size(120L) // Best ask 102
+                .next().price(103).size(220L)
+                .next().price(104L).size(4800L)
+                .next().price(105L).size(5400L);
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
 
@@ -123,8 +123,7 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
     }
 
     protected UnsafeBuffer createMarketTick3(){
-
-        // Continued downward trend, prices are still falling but larger quantity sizes. Perhaps lower prices mean more trading interest at these lower price levels
+// Final state - prices still high
         final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
         final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
@@ -140,115 +139,19 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
         encoder.source(Source.STREAM);
 
         encoder.bidBookCount(3)
-                .next().price(96L).size(180L)
-                .next().price(93L).size(280L)
-                .next().price(89L).size(380L);
+                .next().price(106L).size(220L)
+                .next().price(105L).size(320L)
+                .next().price(104L).size(420L);
 
         encoder.askBookCount(4)
-                .next().price(98L).size(130L)
-                .next().price(103L).size(230L)
-                .next().price(110L).size(4700L)
-                .next().price(117L).size(5300L);
+                .next().price(103L).size(150L)
+                .next().price(104L).size(250L)
+                .next().price(105L).size(300L)
+                .next().price(106L).size(400L);
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
 
         return directBuffer;
     }
-    protected UnsafeBuffer createMarketTick4(){
-
-        // Continued downward trend and increased liquidity (order sizes) in the buy side of the book
-        final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
-        final BookUpdateEncoder encoder = new BookUpdateEncoder();
-
-        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
-        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
-
-        //write the encoded output to the direct buffer
-        encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
-
-        //set the fields to desired values
-        encoder.venue(Venue.XLON);
-        encoder.instrumentId(123L);
-        encoder.source(Source.STREAM);
-
-        encoder.bidBookCount(3)
-                .next().price(95L).size(200L)
-                .next().price(92L).size(300L)
-                .next().price(88L).size(400L);
-
-        encoder.askBookCount(4)
-                .next().price(97L).size(140L)
-                .next().price(102L).size(240L)
-                .next().price(108L).size(4600L)
-                .next().price(116L).size(5200L);
-
-        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
-
-        return directBuffer;
-    }
-
-    protected UnsafeBuffer createMarketTick5(){
-// Continued downward trend
-        final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
-        final BookUpdateEncoder encoder = new BookUpdateEncoder();
-
-        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
-        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
-
-        //write the encoded output to the direct buffer
-        encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
-
-        //set the fields to desired values
-        encoder.venue(Venue.XLON);
-        encoder.instrumentId(123L);
-        encoder.source(Source.STREAM);
-
-        encoder.bidBookCount(3)
-                .next().price(94L).size(220L)
-                .next().price(91L).size(320L)
-                .next().price(87L).size(420L);
-
-        encoder.askBookCount(4)
-                .next().price(96L).size(150L)
-                .next().price(101L).size(250L)
-                .next().price(107L).size(4500L)
-                .next().price(115L).size(5100L);
-
-        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
-
-        return directBuffer;
-    }
-    protected UnsafeBuffer createMarketTick6(){
-
-        final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
-        final BookUpdateEncoder encoder = new BookUpdateEncoder();
-
-        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
-        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
-
-        //write the encoded output to the direct buffer
-        encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
-
-        //set the fields to desired values
-        encoder.venue(Venue.XLON);
-        encoder.instrumentId(123L);
-        encoder.source(Source.STREAM);
-
-        encoder.bidBookCount(3)
-                .next().price(93L).size(240L)
-                .next().price(90L).size(340L)
-                .next().price(86L).size(440L);
-
-        encoder.askBookCount(4)
-                .next().price(95L).size(160L)
-                .next().price(100L).size(260L)
-                .next().price(106L).size(4400L)
-                .next().price(114L).size(5000L);
-
-        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
-
-        return directBuffer;
-    }
-
 
 }

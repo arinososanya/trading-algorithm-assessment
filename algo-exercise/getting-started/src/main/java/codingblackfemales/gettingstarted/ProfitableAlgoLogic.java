@@ -52,7 +52,7 @@ public class ProfitableAlgoLogic implements AlgoLogic {
                 }
             }
 
-            // Look for completely filled buys that need sell orders
+            // Looking for completely filled buys that need sell orders
             for (ChildOrder buyOrder : activeOrders) {
                 if (buyOrder.getSide() == Side.BUY &&
                         buyOrder.isFullyFilled()) {
@@ -66,14 +66,16 @@ public class ProfitableAlgoLogic implements AlgoLogic {
                             return cancelAndCreateSellOrder(buyOrder);
                         }
                     } else {
-                        logger.info("[MYALGO] Creating sell for fully filled buy order {} at profit target",
-                                buyOrder.getOrderId());
+                        // This is where we adjust the sell price
+                        long adjustedSellPrice = calculateAdjustedSellPrice(buyOrder.getPrice(), bestBid.getPrice());
+                        logger.info("[MYALGO] Creating sell for fully filled buy order {} at adjusted price: {}",
+                                buyOrder.getOrderId(), adjustedSellPrice);
                         return createProfitableSellOrder(buyOrder, bufferAmount);
                     }
                 }
             }
 
-            // Create new buy only if we have no orders at all
+            // Creating new buy only if we have no orders at all
             if (activeOrders.isEmpty()) {
                 logger.info("[MYALGO] No active orders - creating new buy");
                 return createBuyOrder(state, bestBid, bestAsk);
@@ -87,6 +89,7 @@ public class ProfitableAlgoLogic implements AlgoLogic {
             return NoAction.NoAction;
         }
     }
+
 
     private boolean hasOpenSellOrder(List<ChildOrder> activeOrders, ChildOrder buyOrder) {
         return activeOrders.stream().anyMatch(order -> order.getSide() == Side.SELL && orderPairs.containsKey(order));

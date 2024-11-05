@@ -21,6 +21,7 @@ public class ChildOrder {
         this.orderId = orderId;
         this.quantity = quantity;
         this.price = price;
+
     }
 
     public Side getSide() {
@@ -53,5 +54,9 @@ public class ChildOrder {
 
     public void addFill(long filledQuantity, long filledPrice) { // this method allows adding new fills to the order
         this.fills.add(new ChildFill(filledQuantity, filledPrice));
+    }
+
+    public boolean isFullyFilled() {
+        return getFilledQuantity() == getQuantity();
     }
 }
