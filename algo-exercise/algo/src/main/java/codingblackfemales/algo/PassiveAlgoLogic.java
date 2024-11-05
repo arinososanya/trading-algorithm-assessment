@@ -36,7 +36,7 @@ public class PassiveAlgoLogic implements AlgoLogic{
             logger.info("[PASSIVEALGO] Have:" + state.getChildOrders().size() + " children, want 3," +
                     " joining passive side of book with: " + quantity + " @ " + price); // want 3 --> max is 3
             return new CreateChildOrder(Side.BUY, quantity, price); // what's being executed
-        }else{ // if orders are more than 3
+        }else{ // if orders are more than 3, exit condition (return no action)
             logger.info("[PASSIVEALGO] Have:" + state.getChildOrders().size() + " children, want 3, done.");
             return NoAction;
         }

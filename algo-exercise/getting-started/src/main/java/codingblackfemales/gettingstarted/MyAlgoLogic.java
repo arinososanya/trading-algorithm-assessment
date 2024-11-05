@@ -38,11 +38,11 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
 
 
     private static final Logger logger = LoggerFactory.getLogger(MyAlgoLogic.class);
-    private static final int MAX_ACTIVE_ORDERS = 3;
+    private static final int MAX_ACTIVE_ORDERS = 2;
     private static final int MAX_TOTAL_ORDERS = 10;
-    private static final double MAX_PRICE_DISTANCE_PERCENT = 0.05;
+    private static final double MAX_PRICE_DISTANCE_PERCENT = 0.02;
     //    private static final long MIN_SPREAD = 2;
-    private static final double PROFIT_THRESHOLD = 0.02;
+    private static final double PROFIT_THRESHOLD = 0.02; // initially 0.02
 
 
     @Override
@@ -79,17 +79,25 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
             boolean cancellationOccurred = false;
 
             // Step 1: I am checking for cancellations
-            for (ChildOrder order : activeOrders) {
-                if (shouldCancelOrder(order, midPrice)) {
-                    cancellationOccurred = true;
-                    logger.info("[MYALGO] Cancelling order: {}", order.getOrderId());
-                    return new CancelChildOrder(order);
-                }
+        logger.info("[MYALGO] Checking {} active orders for cancellation", activeOrders.size());
+        for (ChildOrder order : activeOrders) {
+            logger.info("[MYALGO] Checking order: {}", order);
+            if (shouldCancelOrder(order, midPrice)) {
+                cancellationOccurred = true;
+                logger.info("[MYALGO] Cancelling order Id: {}", order.getOrderId());
+                return new CancelChildOrder(order);
+            }
+//            for (ChildOrder order : activeOrders) {
+//                if (shouldCancelOrder(order, midPrice)) {
+//                    cancellationOccurred = true;
+//                    logger.info("[MYALGO] Cancelling order Id: {}", order.getOrderId());
+//                    return new CancelChildOrder(order);
+//                }
             }
 
             // Step 2: Check for sell opportunities
             for (ChildOrder order : activeOrders) {
-                if (shouldCreateSellOrder(order, askFarTouch.price)) {
+                if (shouldCreateSellOrder(order, bidNearTouch.price)) {
                     Action sellAction = createSellOrder(order);
                     logger.info("[MYALGO] Creating sell order: {}", sellAction);
                     return sellAction;
@@ -106,17 +114,51 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
         }
 
         // My helper methods
-        private boolean shouldCancelOrder (ChildOrder order,double midPrice){
+        private boolean shouldCancelOrder(ChildOrder order, double midPrice) {
             double priceDistance = Math.abs(order.getPrice() - midPrice) / midPrice;
-            return priceDistance > MAX_PRICE_DISTANCE_PERCENT ||
-                    (order.getFilledQuantity() > 0 && order.getFilledQuantity() < order.getQuantity());
+
+            // Add debug logging
+            logger.info("[MYALGO] Cancel Check - OrderId: {}, Side: {}, Price: {}, MidPrice: {}, Distance: {}%, Max Allowed: {}%",
+                    order.getOrderId(),
+                    order.getSide(),
+                    order.getPrice(),
+                    midPrice,
+                    priceDistance * 100,
+                    MAX_PRICE_DISTANCE_PERCENT * 100);
+
+            // Handle partial fills for both buy and sell orders
+            if (order.getFilledQuantity() > 0 && order.getFilledQuantity() < order.getQuantity()) {
+                logger.info("[MYALGO] Order {} should be cancelled. Reason: Partial fill", order.getOrderId());
+                return true;
+            }
+
+            // Only apply price distance check to BUY orders
+            if (order.getSide() == Side.BUY && priceDistance > MAX_PRICE_DISTANCE_PERCENT) {
+                logger.info("[MYALGO] Order {} should be cancelled. Reason: Buy price too far from mid", order.getOrderId());
+                return true;
+            }
+
+            // For sell orders, cancel if price distance is too large (more than 2% from mid)
+            if (order.getSide() == Side.SELL && priceDistance > MAX_PRICE_DISTANCE_PERCENT) {
+                logger.info("[MYALGO] Order {} should be cancelled. Reason: Sell price too far from mid", order.getOrderId());
+                return true;
+            }
+
+            return false;
         }
 
-        private boolean shouldCreateSellOrder (ChildOrder order,long askPrice){
-            return order.getSide() == Side.BUY &&
-                    order.getFilledQuantity() == order.getQuantity() &&
-                    (long) (order.getPrice() * (1 + PROFIT_THRESHOLD)) <= askPrice;
-        }
+    private boolean shouldCreateSellOrder(ChildOrder order, long bidPrice) {
+        // Modify logic to allow selling of partially filled orders
+        return order.getSide() == Side.BUY &&
+                order.getFilledQuantity() > 0 && // Allow partial fills to be considered
+                (long) (order.getPrice() * (1 + PROFIT_THRESHOLD)) <= bidPrice;
+    }
+
+//        private boolean shouldCreateSellOrder (ChildOrder order,long bidPrice){
+//            return order.getSide() == Side.BUY &&
+//                    order.getFilledQuantity() == order.getQuantity() &&
+//                    (long) (order.getPrice() * (1 + PROFIT_THRESHOLD)) >= bidPrice;
+//        }
 
         private Action createSellOrder (ChildOrder buyOrder){
             long sellPrice = (long) (buyOrder.getPrice() * (1 + PROFIT_THRESHOLD));
@@ -131,7 +173,7 @@ public class MyAlgoLogic implements AlgoLogic { // implementing the AlgoLogic in
 
         private Action createBuyOrder (BidLevel bidNearTouch, AskLevel askFarTouch){
             long buyPrice = bidNearTouch.price + 1L;
-            long quantity = Math.min(100, askFarTouch.quantity);
+            long quantity = Math.min(100, askFarTouch.quantity); // whatever is the min value between quantity on ask side vs 100. This helps prevent my algorithm from trying to trade sizes that might be too large for the available liquidity in the market.
             return new CreateChildOrder(Side.BUY, quantity, buyPrice);
         }
 

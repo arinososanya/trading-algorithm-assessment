@@ -22,7 +22,5 @@ public interface SimpleAlgoState { // explore this - contains methods for order 
 
     public long getInstrumentId();
 
-    default List<Trade> getRecentTrades(){ // List is an interface, while ArrayList and LinkedList are specific implementations. Using List allows for more flexibility
-        return Collections.emptyList(); // this is the 'do nothing' behaviour. When using this method, it will be overriden.
     }
-}
+

@@ -66,11 +66,14 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest { // I can implement th
                 .orElse(0L);
         assertTrue("Should have filled orders", filledQuantity > 0);
 
+
+
         // Log final state
         System.out.println("Final state:");
         System.out.println("Active buy orders: " + buyOrders);
         System.out.println("Active sell orders: " + sellOrders);
         System.out.println("Total filled quantity: " + filledQuantity);
+
     }
 
 }
