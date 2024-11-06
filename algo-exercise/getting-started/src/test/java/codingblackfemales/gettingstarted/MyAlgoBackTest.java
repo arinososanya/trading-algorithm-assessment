@@ -30,7 +30,7 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest {
     @Override
     public AlgoLogic createAlgoLogic() {
 
-        return new ProfitableAlgoLogic();
+        return new MyAlgoLogicNew(); // You can replace this with ProfitableAlgoLogic
     }
 
     @Test
