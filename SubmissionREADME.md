@@ -29,6 +29,11 @@ A React-based visualisation showing market depth data including:
 - Bid and ask levels
 - Price and quantity information
 - Real-time updates
+- 
+<img width="941" alt="Arin_Market_Depth_UI" src="https://github.com/user-attachments/assets/73f8dcfc-3760-4f5c-9578-0331d2792d05">
+
+
+
 
 ## How to Run
 1. Clone the repository
