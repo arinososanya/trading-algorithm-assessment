@@ -4,7 +4,10 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/algo-exercise/sequencer/pom.xml" />
+        <option value="$PROJECT_DIR$/algo-exercise/oms/pom.xml" />
+        <option value="$PROJECT_DIR$/algo-exercise/getting-started/pom.xml" />
+        <option value="$PROJECT_DIR$/algo-exercise/pom.xml" />
       </list>
     </option>
   </component>

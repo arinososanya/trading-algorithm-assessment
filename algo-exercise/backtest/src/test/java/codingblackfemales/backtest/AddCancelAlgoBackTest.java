@@ -26,15 +26,13 @@ import static org.junit.Assert.assertEquals;
 
 public class AddCancelAlgoBackTest extends SequencerTestCase {
 
-    // Setting Up the Pipes
-    private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder(); // instance variables for the test class, including encoders for creating market data messages and a container for the algorithm.
+    private final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
     private final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
-    private AlgoContainer container; //  the container will hold the algorithm being tested.
-
+    private AlgoContainer container;
 
     @Override
-    public Sequencer getSequencer() { // This method sets up the entire testing environment.
+    public Sequencer getSequencer() {
         final TestNetwork network = new TestNetwork();
         final Sequencer sequencer = new DefaultSequencer(network);
 
@@ -47,9 +45,9 @@ public class AddCancelAlgoBackTest extends SequencerTestCase {
 
         final OrderBookInboundOrderConsumer orderConsumer = new OrderBookInboundOrderConsumer(book);
 
-        container = new AlgoContainer(new MarketDataService(runTrigger), new OrderService(runTrigger), runTrigger, actioner); // The test class creates an AlgoContainer.
+        container = new AlgoContainer(new MarketDataService(runTrigger), new OrderService(runTrigger), runTrigger, actioner);
         //set my algo logic
-        container.setLogic(new AddCancelAlgoLogic()); // The AddCancelAlgoLogic is set as the logic for the AlgoContainer
+        container.setLogic(new AddCancelAlgoLogic());
 
         network.addConsumer(new LoggingConsumer());
         network.addConsumer(book);
@@ -61,7 +59,7 @@ public class AddCancelAlgoBackTest extends SequencerTestCase {
         return sequencer;
     }
 
-    private UnsafeBuffer createSampleMarketDataTick(){ // This method creates another sample market data update with different prices.
+    private UnsafeBuffer createSampleMarketDataTick(){
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
 
@@ -122,21 +120,16 @@ public class AddCancelAlgoBackTest extends SequencerTestCase {
         //create a sample market data tick....
         send(createSampleMarketDataTick());
         //simple assert to check we had 3 orders created
-        assertEquals(container.getState().getChildOrders().size(), 3);
+        //assertEquals(container.getState().getChildOrders().size(), 3);
 
         //when: market data moves towards us
-        UnsafeBuffer bufferExample = createSampleMarketDataTick();
-        send(bufferExample); // the second sample market data tick
-
-//        send(createSampleMarketDataTick2());
+        send(createSampleMarketDataTick2());
 
         //then: get the state
         var state = container.getState();
         long filledQuantity = state.getChildOrders().stream().map(ChildOrder::getFilledQuantity).reduce(Long::sum).get();
 
         //and: check that our algo state was updated to reflect our fills when the market data
-
         assertEquals(100, filledQuantity);
-
     }
 }

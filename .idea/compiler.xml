@@ -11,10 +11,13 @@
         <module name="dictionary" />
         <module name="oms" />
         <module name="collection" />
-        <module name="ui-exercise" />
         <module name="algo" />
         <module name="sequencer" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="parent" target="17" />
+      <module name="ui-exercise" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>

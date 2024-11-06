@@ -1,5 +1,4 @@
 package codingblackfemales.gettingstarted;
-
 import codingblackfemales.algo.AlgoLogic;
 import codingblackfemales.sotw.ChildOrder;
 import codingblackfemales.sotw.SimpleAlgoState;
@@ -30,6 +29,7 @@ public class MyAlgoBackTest extends AbstractAlgoBackTest {
 
     @Override
     public AlgoLogic createAlgoLogic() {
+
         return new ProfitableAlgoLogic();
     }
 
