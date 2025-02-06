@@ -76,67 +76,119 @@ public abstract class AbstractAlgoTest extends SequencerTestCase {
         return directBuffer;
     }
 
-    protected UnsafeBuffer createTick2() {
 
+    protected UnsafeBuffer createTickThatShouldTriggerCancellation() {
         final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
         final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
 
-        //write the encoded output to the direct buffer
         encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
 
-        //set the fields to desired values
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
-
-        encoder.bidBookCount(3)
-                .next().price(97L).size(150L)
-                .next().price(94L).size(250L)
-                .next().price(90L).size(350L);
-
-        encoder.askBookCount(3)
-                .next().price(99L).size(120L)
-                .next().price(105L).size(220L)
-                .next().price(118L).size(4800L);
-
-
-        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
         encoder.source(Source.STREAM);
 
-        return directBuffer;
+        // Creating prices that will definitely trigger a cancellation
+        // If an order was created at 100, and I want it to be >5% from mid price:
 
+        encoder.bidBookCount(3)
+                .next().price(95L).size(100L)   // Best bid at 95
+                .next().price(94L).size(200L)
+                .next().price(93L).size(300L);
+
+        encoder.askBookCount(3)
+                .next().price(115L).size(100L)  // Best ask at 115
+                .next().price(116L).size(200L)
+                .next().price(117L).size(300L);
+
+        // Mid-price would be (95 + 115) / 2 = 105
+        // If original order was at 96 (best bid + 1):
+        // Price distance = |96 - 105| / 105 = 0.0857 or 8.57%
+        // This is > 5% so should trigger cancellation
+
+        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
+
+        return directBuffer;
     }
 
-    protected UnsafeBuffer createTickThatShouldTriggerCancellation(){
+    protected UnsafeBuffer createTickWithInvalidData() {
         final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
         final BookUpdateEncoder encoder = new BookUpdateEncoder();
 
         final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
 
-        //write the encoded output to the direct buffer
         encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
-
-        //set the fields to desired values
         encoder.venue(Venue.XLON);
         encoder.instrumentId(123L);
 
-        encoder.askBookCount(3)
-                .next().price(200L).size(50L) // Highest price
-                .next().price(160L).size(55L)
-                .next().price(120L).size(5000L);
+        // Setting bid and ask to zero to simulate invalid data
+        encoder.bidBookCount(1)
+                .next().price(0L).size(0L); // Invalid bid data
 
-        encoder.bidBookCount(3)
-                .next().price(98L).size(100L) // Highest price
-                .next().price(95L).size(200L)
-                .next().price(91L).size(300L);
+        encoder.askBookCount(1)
+                .next().price(0L).size(0L); // Invalid ask data
 
         encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
         encoder.source(Source.STREAM);
 
         return directBuffer;
-
     }
+
+
+    protected UnsafeBuffer createTickWithLargeSpread() {
+        final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
+        final BookUpdateEncoder encoder = new BookUpdateEncoder();
+
+        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
+
+        encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
+
+        encoder.venue(Venue.XLON);
+        encoder.instrumentId(123L);
+        encoder.source(Source.STREAM);
+
+        encoder.bidBookCount(3)
+                .next().price(100L).size(100L)
+                .next().price(98L).size(200L)
+                .next().price(96L).size(300L);
+
+        encoder.askBookCount(3)
+                .next().price(200L).size(100L)  // Large spread to trigger cancellation
+                .next().price(202L).size(200L)
+                .next().price(204L).size(300L);
+
+        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
+
+        return directBuffer;
+    }
+
+
+
+    protected UnsafeBuffer createTickNearMidPrice() {
+        final MessageHeaderEncoder headerEncoder = new MessageHeaderEncoder();
+        final BookUpdateEncoder encoder = new BookUpdateEncoder();
+
+        final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+        final UnsafeBuffer directBuffer = new UnsafeBuffer(byteBuffer);
+
+        encoder.wrapAndApplyHeader(directBuffer, 0, headerEncoder);
+        encoder.venue(Venue.XLON);
+        encoder.instrumentId(123L);
+
+        encoder.bidBookCount(1)
+                .next().price(98L).size(100L); // Near-mid bid price
+
+        encoder.askBookCount(1)
+                .next().price(102L).size(100L); // Near-mid ask price
+
+        encoder.instrumentStatus(InstrumentStatus.CONTINUOUS);
+        encoder.source(Source.STREAM);
+
+        return directBuffer;
+    }
+
 }

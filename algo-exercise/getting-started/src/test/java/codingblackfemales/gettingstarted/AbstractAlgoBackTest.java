@@ -74,12 +74,12 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
         encoder.source(Source.STREAM);
 
         encoder.bidBookCount(3)
-                .next().price(100L).size(100L) // Best bid 98 , highest price (highest to lowest)
+                .next().price(100L).size(100L) // Best bid 100 , highest price (highest to lowest)
                 .next().price(96L).size(200L)
                 .next().price(94L).size(300L);
 
         encoder.askBookCount(4)
-                .next().price(102L).size(100L) // Best ask 99 (spread =1), lowest price (lowest to highest)
+                .next().price(102L).size(100L) // Best ask 102 (spread =2 ticks, tight spread), lowest price (lowest to highest)
                 .next().price(101L).size(200L)
                 .next().price(100L).size(300L)
                 .next().price(99L).size(400L);
@@ -139,7 +139,7 @@ public abstract class AbstractAlgoBackTest extends SequencerTestCase {
         encoder.source(Source.STREAM);
 
         encoder.bidBookCount(3)
-                .next().price(106L).size(220L)
+                .next().price(106L).size(220L) // significant upward movement
                 .next().price(105L).size(320L)
                 .next().price(104L).size(420L);
 

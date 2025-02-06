@@ -1,6 +1,6 @@
 package codingblackfemales.gettingstarted;
 
-import codingblackfemales.action.Action;
+import codingblackfemales.action.Action; // <EXPLAIN: WHY USE THIS?>
 import codingblackfemales.action.CancelChildOrder;
 import codingblackfemales.action.CreateChildOrder;
 import codingblackfemales.action.NoAction;
@@ -14,7 +14,7 @@ import messages.order.Side;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.HashMap; // <EXPLAIN: WHY USE THIS?>
 import java.util.List;
 import java.util.Map;
 
@@ -53,22 +53,23 @@ import java.util.Map;
  */
 
 public class ProfitableAlgoLogic implements AlgoLogic {
-    private Map<ChildOrder, ChildOrder> orderPairs = new HashMap<>();
+    private Map<ChildOrder, ChildOrder> orderPairs = new HashMap<>(); // This is like a notebook where we write down: 'I bought this, and I'm trying to sell it for that'
     private static final Logger logger = LoggerFactory.getLogger(ProfitableAlgoLogic.class);
-    private static final int MAX_ACTIVE_ORDERS = 2;    // Reduced to control order flow
-    private static final int PROFIT_TICKS = 2;         // Minimum profit target
-    private static final int STOP_LOSS_TICKS = 5;         // Minimum stop loss
+    private static final int MAX_ACTIVE_ORDERS = 2;    // Only 2 orders at a time. Reduced to control order flow
+    private static final int PROFIT_TICKS = 2;         // Try to make 2 ticks profit. Minimum profit target
+    private static final int STOP_LOSS_TICKS = 5;         // Cut losses at 5 ticks down. Minimum stop loss
     double bufferPercentage = 0.01;
 
     @Override
     public Action evaluate(SimpleAlgoState state) {
         try {
-            List<ChildOrder> activeOrders = state.getActiveChildOrders();
+            // What orders do we have and what are the current market prices?
+            List<ChildOrder> activeOrders = state.getActiveChildOrders(); // <EXPLAIN THE LIST AND THE STATE.GETACTIVE... WHAT ARE THE MECHANICS BTS?>
             BidLevel bestBid = state.getBidAt(0);
             AskLevel bestAsk = state.getAskAt(0);
             double bufferAmount = bestBid.getPrice() * bufferPercentage;
 
-            logger.info("[MYALGO] The state of the order book is:\n" + Util.orderBookToString(state));
+            logger.info("[MYALGO] The state of the order book is:\n" + Util.orderBookToString(state)); // <EXPLAIN THIS STREAM>
             logger.info("[MYALGO] Active orders: {}", activeOrders.size());
 
             // Basic safety checks
